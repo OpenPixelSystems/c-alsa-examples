@@ -69,12 +69,21 @@ int main(int argc, char **argv)
 	}
 
 	long vol_max, vol_min, vol_curr;
+
+	/* Get the mixer min max values */
 	snd_mixer_selem_get_playback_volume_range(elem, &vol_min, &vol_max);
-	printf("Min %ld - Max %ld\n", vol_min, vol_max);
+
+	/* Get currect volume */
 	snd_mixer_selem_get_playback_volume(elem, 0, &vol_curr);
-	int percent = convert_to_percent(vol_curr, vol_min, vol_max);
-	long back_to_val = convert_from_percent(percent, vol_min, vol_max);
-	printf("Current: %ld -> %d -> %ld\n", vol_curr, percent, back_to_val);
+
+	/* Gradually increase volume from 0 to 50% */
+	for (int i = 0; i <= 50; i++) {
+		long back_to_val = convert_from_percent(i, vol_min, vol_max);
+		printf("step %d: %ld\n", i, back_to_val);
+		snd_mixer_selem_set_playback_volume(elem, 0, back_to_val);
+		snd_mixer_selem_set_playback_volume(elem, 1, back_to_val);
+		sleep(1);
+	}
 
 cleanup:
 	snd_mixer_close(handle);
