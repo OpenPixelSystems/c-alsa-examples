@@ -19,7 +19,6 @@ int main()
 		goto cleanup;
 	}
 
-
 	/* Allocate HW and SW params structure */
 	snd_pcm_hw_params_alloca(&hw_params);
 	snd_pcm_sw_params_malloc(&sw_params);
@@ -55,6 +54,12 @@ int main()
 		goto cleanup;
 	}
 
+	if ((error = snd_pcm_hw_params(handle, hw_params)) < 0) {
+		printf("Failed to set HW params\n");
+		goto cleanup;
+	}
+
+	printf("Capture setup succesful\n");
 
 cleanup:
 	if (handle) {
