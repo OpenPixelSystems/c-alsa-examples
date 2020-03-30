@@ -17,11 +17,36 @@ static void sig_handler(int sig)
 }
 
 
+/**
+ * @brief  Iterate over all existing codecs in the system
+ */
+static void _alsa_iter_codecs()
+{
+	void **hints;
+	int err = snd_device_name_hint(-1, "pcm", (void ***)&hints);
+
+	if (err < 0) {
+		return;
+	}
+
+	char **n = (char **)hints;
+	while (*n != NULL) {
+		char *name = snd_device_name_get_hint(*n, "NAME");
+		if (name != NULL) {
+			printf("%s\n", name);
+			free(name);
+		}
+		n++;
+	}
+	snd_device_name_free_hint(hints);
+}
+
 int main()
 {
 	int error = 0;
 	unsigned int nr_channels = NR_CHANNELS;
 	unsigned int sample_rate = 16000;
+	unsigned long period_size = NR_SAMPLES;
 	snd_pcm_t *handle = NULL;
 	snd_pcm_sw_params_t *sw_params = NULL;
 	snd_pcm_hw_params_t *hw_params = NULL;
@@ -31,9 +56,16 @@ int main()
 	signal(SIGINT, sig_handler);
 	signal(SIGQUIT, sig_handler);
 
+	_alsa_iter_codecs();
+
 	/* Open the default alsa sound device in capture mode */
-	error = snd_pcm_open(&handle, "default", SND_PCM_STREAM_CAPTURE, 1);
+	error = snd_pcm_open(&handle, "default", SND_PCM_STREAM_CAPTURE, 0);
 	if (error < 0) {
+		printf("Failed to open PCM device %s\n", snd_strerror(error));
+		goto cleanup;
+	}
+
+	if (!handle) {
 		printf("Failed to open PCM device %s\n", snd_strerror(error));
 		goto cleanup;
 	}
@@ -41,6 +73,7 @@ int main()
 	/* Allocate HW and SW params structure */
 	snd_pcm_hw_params_alloca(&hw_params);
 	snd_pcm_sw_params_malloc(&sw_params);
+	snd_pcm_sw_params_current(handle, sw_params);
 
 	/* Setup HW params for all possible parameters */
 	if (snd_pcm_hw_params_any(handle, hw_params) < 0) {
@@ -66,6 +99,12 @@ int main()
 	if ((error = snd_pcm_hw_params_set_rate_near(handle, hw_params, &sample_rate, 0)) < 0) {
 		printf("ERROR: Can't set rate. %s\n", snd_strerror(error));
 		goto cleanup;
+	}
+
+	if ((error = snd_pcm_hw_params_set_period_size_near(handle, hw_params, &period_size, 0)) < 0) {
+		printf("Error: Can't set period size\n");
+		return -1;
+
 	}
 
 	/* Push ALSA HW params */
