@@ -7,6 +7,7 @@
 
 #define NR_SAMPLES 256
 #define NR_CHANNELS 1
+#define FMT_SIZE 2
 
 int main()
 {
@@ -25,15 +26,11 @@ int main()
 		goto cleanup;
 	}
 
-	if (!handle) {
-		printf("Failed to open PCM device %s\n", snd_strerror(error));
-		goto cleanup;
-	}
-
 	/* Allocate HW and SW params structure */
-	snd_pcm_hw_params_alloca(&hw_params);
 	snd_pcm_sw_params_malloc(&sw_params);
 	snd_pcm_sw_params_current(handle, sw_params);
+
+	snd_pcm_hw_params_alloca(&hw_params);
 
 	/* Setup HW params for all possible parameters */
 	if (snd_pcm_hw_params_any(handle, hw_params) < 0) {
@@ -77,7 +74,7 @@ int main()
 
 	for (int i = 0; i < 100; i++) {
 		/* Note: ALSA Reads/Writes in number of samples! */
-		char read_buffer[NR_SAMPLES * NR_CHANNELS];
+		char read_buffer[NR_SAMPLES * NR_CHANNELS * FMT_SIZE];
 		int readn = snd_pcm_readi(handle, read_buffer, NR_SAMPLES);
 		if (readn < 0) {
 			/* Recover the ALSA internal state if an error occurse */
