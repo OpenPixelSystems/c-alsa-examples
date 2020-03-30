@@ -3,6 +3,7 @@ project('ALSA Examples', 'c')
 cc = meson.get_compiler('c')
 
 alsa = cc.find_library('asound', required : true)
+math = cc.find_library('m', required : true)
 
 common_incl = include_directories('common')
 
