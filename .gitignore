@@ -1,3 +1,6 @@
 build
 .color_coded
 *.swp
+.clangd
+compile_commands.json
+*.wav

@@ -1,3 +1,11 @@
+/**
+ * @file main.c
+ * @brief  ALSA simple capture example
+ * @author Bram Vlerick <bram.vlerick@openpixelsystems.org>
+ * @version
+ * @date 2020-03-30
+ */
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdbool.h>
