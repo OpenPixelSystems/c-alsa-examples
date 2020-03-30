@@ -8,39 +8,6 @@
 #define NR_SAMPLES 256
 #define NR_CHANNELS 1
 
-bool keep_going = true;
-
-static void sig_handler(int sig)
-{
-	(void)sig;
-	keep_going = false;
-}
-
-
-/**
- * @brief  Iterate over all existing codecs in the system
- */
-static void _alsa_iter_codecs()
-{
-	void **hints;
-	int err = snd_device_name_hint(-1, "pcm", (void ***)&hints);
-
-	if (err < 0) {
-		return;
-	}
-
-	char **n = (char **)hints;
-	while (*n != NULL) {
-		char *name = snd_device_name_get_hint(*n, "NAME");
-		if (name != NULL) {
-			printf("%s\n", name);
-			free(name);
-		}
-		n++;
-	}
-	snd_device_name_free_hint(hints);
-}
-
 int main()
 {
 	int error = 0;
@@ -50,13 +17,6 @@ int main()
 	snd_pcm_t *handle = NULL;
 	snd_pcm_sw_params_t *sw_params = NULL;
 	snd_pcm_hw_params_t *hw_params = NULL;
-
-	/* Handle TERM & Control-C signals */
-	signal(SIGTERM, sig_handler);
-	signal(SIGINT, sig_handler);
-	signal(SIGQUIT, sig_handler);
-
-	_alsa_iter_codecs();
 
 	/* Open the default alsa sound device in capture mode */
 	error = snd_pcm_open(&handle, "default", SND_PCM_STREAM_CAPTURE, 0);
@@ -115,7 +75,7 @@ int main()
 
 	printf("Capture setup succesful\n");
 
-	while(keep_going) {
+	for (int i = 0; i < 100; i++) {
 		/* Note: ALSA Reads/Writes in number of samples! */
 		char read_buffer[NR_SAMPLES * NR_CHANNELS];
 		int readn = snd_pcm_readi(handle, read_buffer, NR_SAMPLES);
