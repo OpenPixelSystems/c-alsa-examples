@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 	snd_pcm_hw_params_t *hw_params = NULL;
 
 	/* Open the default alsa sound device in capture mode */
-	error = snd_pcm_open(&handle, "pulse", SND_PCM_STREAM_PLAYBACK, 0);
+	error = snd_pcm_open(&handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
 	if (error < 0) {
 		printf("Failed to open PCM device %s\n", snd_strerror(error));
 		goto cleanup;
