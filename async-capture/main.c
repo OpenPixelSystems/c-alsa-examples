@@ -91,16 +91,19 @@ int main()
 
 	snd_pcm_sw_params_set_start_threshold(handle, sw_params, buffer_size - period_size);
 	snd_pcm_sw_params_set_avail_min(handle, sw_params, period_size);
-	snd_pcm_sw_params(handle, sw_params);
-	snd_pcm_sw_params_free (sw_params);
+	snd_pcm_sw_params(handle, sw_params); //!< Set SW params
 
+	snd_pcm_sw_params_free (sw_params); //!< Cleanup
 
-	snd_pcm_prepare(handle);
+	snd_pcm_prepare(handle); //!< Prepare the PCM device for playback or capture
 
 	snd_async_handler_t *async_handler;
-	snd_async_add_pcm_handler(&async_handler, handle, _record_callback, NULL);
+	if ((error = snd_async_add_pcm_handler(&async_handler, handle, _record_callback, NULL)) < 0) {
+		printf("Failed to add PCM handler! ASync not supported \n");
+		goto cleanup;
+	}
 
-	snd_pcm_start(handle);
+	snd_pcm_start(handle); //!< Start capture
 
 	printf("Capture setup succesful\n");
 
