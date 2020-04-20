@@ -1,6 +1,6 @@
 /**
  * @file main.c
- * @brief  ALSA simple playback example
+ * @brief  ALSA simple nonblock playback example
  * @author Bram Vlerick <bram.vlerick@openpixelsystems.org>
  * @version
  * @date 2020-03-30
@@ -39,16 +39,13 @@ int main(int argc, char **argv)
 	snd_pcm_hw_params_t *hw_params = NULL;
 
 	/* Open the default alsa sound device in playback mode */
+	/* Set NONBLOCK parameter as well */
 	error = snd_pcm_open(&handle, "sysdefault:CARD=Class", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
 	/* error = snd_pcm_open(&handle, "default", SND_PCM_STREAM_PLAYBACK, 0); */
 	if (error < 0) {
 		printf("Failed to open PCM device %s\n", snd_strerror(error));
 		goto cleanup;
 	}
-
-	/* Allocate HW and SW params structure */
-	snd_pcm_sw_params_malloc(&sw_params);
-	snd_pcm_sw_params_current(handle, sw_params);
 
 	snd_pcm_hw_params_alloca(&hw_params);
 
@@ -78,6 +75,7 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 
+	printf("Requested periodsize = %ld\n", period_size);
 	if ((error = snd_pcm_hw_params_set_period_size_near(handle, hw_params, &period_size, 0)) < 0) {
 		printf("Error: Can't set period size\n");
 		return -1;
@@ -88,6 +86,21 @@ int main(int argc, char **argv)
 	if ((error = snd_pcm_hw_params(handle, hw_params)) < 0) {
 		printf("Failed to set HW params\n");
 		goto cleanup;
+	}
+
+	if (period_size != NR_SAMPLES) {
+		printf("Period size is not what was requested!\n");
+
+		/* Allocate HW and SW params structure */
+		snd_pcm_sw_params_malloc(&sw_params);
+		snd_pcm_sw_params_current(handle, sw_params);
+
+		snd_pcm_sw_params_set_start_threshold(handle, sw_params, NR_SAMPLES);
+		error = snd_pcm_sw_params(handle, sw_params);
+		if (error < 0) {
+			printf("Failed to set SW params %s\n", snd_strerror(error));
+			goto cleanup;
+		}
 	}
 
 	printf("Playback setup succesful\n");
@@ -143,10 +156,7 @@ int main(int argc, char **argv)
 	}
 
 cleanup:
-	if (i) {
-		printf("Average write time: %lf\n", avg_time / i);
-	}
-
+	printf("Average write time: %lf\n", avg_time / i);
 	if (handle) {
 		snd_pcm_close(handle);
 	}
